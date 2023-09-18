@@ -20,6 +20,3 @@ const response = await chatbot.chat("Hello Mr Zaganjori, how are you doing today
 console.log(response);
 const audio = await chatbot.textToSpeech(response);
 console.log(audio);
-// Play the audio
-const player = new Audio(audio);
-player.play();

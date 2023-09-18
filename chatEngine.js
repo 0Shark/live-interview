@@ -5,6 +5,7 @@ import { LocalStorage } from "node-localstorage";
 // Allow use of require function
 import { createRequire } from "module";
 import path from "path";
+import { re } from "mathjs";
 const require = createRequire(import.meta.url);
 const PDFExtract = require("pdf.js-extract").PDFExtract;
 const pdfExtract = new PDFExtract();
@@ -12,10 +13,10 @@ const pdfExtract = new PDFExtract();
 const fs = require("fs");
 const request = require("request");
 
-dotenv.config();
-
 export default class Chatbot {
 	constructor(settings) {
+		dotenv.config();
+
 		this.openai = new OpenAI({
 			apiKey: process.env.OPENAI_API_KEY,
 		});
@@ -56,7 +57,7 @@ export default class Chatbot {
 
 		this.messages.push({
 			role: "system",
-			content: `NO MATTER WHAT, STICK TO THE INSTRUCTIONS: You're an interview clone taking part in a job interview, you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}.NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions:`,
+			content: `NO MATTER WHAT, STICK TO THE INSTRUCTIONS AND USE MAX 2 SENTENCES: You're an interview clone taking part in a job interview, you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}.NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions:`,
 		});
 
 		for (const [input_text, completion_text] of this.openaiHistory) {
@@ -141,28 +142,46 @@ export default class Chatbot {
 		return chat_path;
 	}
 
-	async textToSpeech(response) {
-		const audioFilePath = path.join(this.publicDir, "temp/audio", `${Math.random().toString(36).substring(7)}.wav`);
+	async textToSpeech(text) {
+		// Generate random file name
+		const fileName = `${Math.random().toString(36).substring(7)}.wav`;
+
+		// Output file path
+		const audioFilePath = path.join(this.publicDir, "temp/audio", fileName);
+
+		// Create audio config
 		const audioConfig = sdk.AudioConfig.fromAudioFileOutput(audioFilePath);
+
+		// Create synthesizer
 		const synthesizer = new sdk.SpeechSynthesizer(this.speechConfig, audioConfig);
 
-		// Wrap the speakTextAsync in a promise for better error handling
-		const result = await new Promise((resolve, reject) => {
-			synthesizer.speakTextAsync(response, function (result) {
-				if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-					console.log("Audio file path: " + audioFilePath);
-					this.audioFilePaths.push(audioFilePath);
-					resolve(audioFilePath);
-				} else {
-					reject(result.errorDetails);
-				}
-			});
-		});
+		try {
+			// Synthesize to file
+			try {
+				const result = await synthesizer.speakTextAsync(text);
+				console.log(result);
+			} catch (error) {
+				console.log(error);
+				return null;
+			}
 
-    if (result.error) {
-      console.log(result.error);
-    }
+			// Check result
+			if (result.reason !== sdk.ResultReason.SynthesizingAudioCompleted) {
+				throw new Error(`Synthesis failed: ${result.errorDetails}`);
+			}
 
-    return audioFilePath;
+			// Add file path
+			this.audioFilePaths.push(audioFilePath);
+
+			// Return file path
+			return audioFilePath;
+		} catch (error) {
+			// Log error
+			console.error(error);
+			return null;
+		} finally {
+			// Close synthesizer
+			synthesizer.close();
+		}
 	}
 }
