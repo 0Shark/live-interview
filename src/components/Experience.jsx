@@ -7,17 +7,17 @@ import { useEffect, useRef, useState } from "react";
 export const Experience = () => {
 	const controls = useRef();
 
-	useEffect(() => {
-		const handleMouseMove = (event) => {
-      controls.current.setAzimuthalAngle((event.clientX / window.innerWidth) * Math.PI - Math.PI / 2);
-      controls.current.setPolarAngle((event.clientY / window.innerHeight) * Math.PI - Math.PI / 2);
-		};
+	// useEffect(() => {
+	// 	const handleMouseMove = (event) => {
+  //     controls.current.setAzimuthalAngle((event.clientX / window.innerWidth) * Math.PI - Math.PI / 2);
+  //     controls.current.setPolarAngle((event.clientY / window.innerHeight) * Math.PI - Math.PI / 2);
+	// 	};
 
-		window.addEventListener("mousemove", handleMouseMove);
-		return () => {
-			window.removeEventListener("mousemove", handleMouseMove);
-		};
-	}, []);
+	// 	window.addEventListener("mousemove", handleMouseMove);
+	// 	return () => {
+	// 		window.removeEventListener("mousemove", handleMouseMove);
+	// 	};
+	// }, []);
   
 	const texture = useTexture("textures/youtubeBackground.jpg");
 	const viewport = useThree((state) => state.viewport);

@@ -32,6 +32,7 @@ Object.values(animationFiles).forEach((url) => {
 	useFBX.preload(url);
 });
 
+// ReadyPlayerMe visemes map
 const corresponding = {
 	A: "viseme_PP",
 	B: "viseme_kk",
@@ -51,6 +52,7 @@ export function Avatar(props) {
 		headFollow: true,
 		smoothMorphTarget: true,
 		morphTargetSmoothing: 0.5,
+		// default scripts for testing
 		script: {
 			value: "welcome",
 			options: ["welcome", "pizzas"],
