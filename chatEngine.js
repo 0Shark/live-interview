@@ -57,7 +57,7 @@ export default class Chatbot {
 
 		this.messages.push({
 			role: "system",
-			content: `NO MATTER WHAT, STICK TO THE INSTRUCTIONS AND USE MAX 2 SENTENCES: You're an interview clone taking part in a job interview, you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}.NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions:`,
+			content: `NO MATTER WHAT, STICK TO THE INSTRUCTIONS AND USE MAX 2 SENTENCES: You're an interview clone taking part in a job interview, you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}.NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions: ${resumeText}`,
 		});
 
 		for (const [input_text, completion_text] of this.openaiHistory) {
@@ -102,7 +102,6 @@ export default class Chatbot {
 		});
 
 		try {
-			console.log(this.messages);
 			const completion = await this.openai.chat.completions.create({
 				model: "gpt-3.5-turbo",
 				messages: this.messages,
@@ -143,45 +142,39 @@ export default class Chatbot {
 	}
 
 	async textToSpeech(text) {
-		// Generate random file name
-		const fileName = `${Math.random().toString(36).substring(7)}.wav`;
-
-		// Output file path
-		const audioFilePath = path.join(this.publicDir, "temp/audio", fileName);
-
-		// Create audio config
-		const audioConfig = sdk.AudioConfig.fromAudioFileOutput(audioFilePath);
-
-		// Create synthesizer
-		const synthesizer = new sdk.SpeechSynthesizer(this.speechConfig, audioConfig);
-
-		try {
-			// Synthesize to file
+		let audioPath = await new Promise((resolve, reject) => {
 			try {
-				const result = await synthesizer.speakTextAsync(text);
-				console.log(result);
+				const fileName = `${Math.random().toString(36).substring(7)}.wav`;
+				const audioFilePath = path.join(this.publicDir, "temp/audio", fileName);
+				const audioConfig = sdk.AudioConfig.fromAudioFileOutput(audioFilePath);
+				const synthesizer = new sdk.SpeechSynthesizer(this.speechConfig, audioConfig);
+
+				// Synthesize text to speech
+				synthesizer.speakTextAsync(text, function (result) {
+					if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+						// Close synthesizer
+						synthesizer.close();
+
+						// Resolve promise with audio file path
+						resolve(audioFilePath);
+					} else {
+						// Close synthesizer
+						synthesizer.close();
+
+						// Reject promise on error
+						reject(result);
+					}
+				});
 			} catch (error) {
-				console.log(error);
-				return null;
+				// Reject promise on error
+				reject(error);
 			}
+		});
 
-			// Check result
-			if (result.reason !== sdk.ResultReason.SynthesizingAudioCompleted) {
-				throw new Error(`Synthesis failed: ${result.errorDetails}`);
-			}
+		// Add audio file path to array
+		this.audioFilePaths.push(audioPath);
 
-			// Add file path
-			this.audioFilePaths.push(audioFilePath);
-
-			// Return file path
-			return audioFilePath;
-		} catch (error) {
-			// Log error
-			console.error(error);
-			return null;
-		} finally {
-			// Close synthesizer
-			synthesizer.close();
-		}
+		// Return audio file path
+		return audioPath;
 	}
 }

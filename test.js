@@ -1,5 +1,22 @@
 // Import the class
 import Chatbot from "./chatEngine.js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+// Import the player
+import { playAudioFile } from "audic";
+
+import { createInterface } from "readline"; // Import readline
+const readline = createInterface({
+	input: process.stdin,
+	output: process.stdout,
+});
+const readLineAsync = (msg) => {
+	return new Promise((resolve) => {
+		readline.question(msg, (userRes) => {
+			resolve(userRes);
+		});
+	});
+};
 
 // Create settings
 const settings = {
@@ -15,8 +32,13 @@ const settings = {
 // Initialize the chatbot
 const chatbot = new Chatbot(settings);
 await chatbot.initialize();
-// Get a response
-const response = await chatbot.chat("Hello Mr Zaganjori, how are you doing today?");
-console.log(response);
-const audio = await chatbot.textToSpeech(response);
-console.log(audio);
+// Start CLI chat
+while (true) {
+	// Get user input
+	const userInput = await readLineAsync("You: ");
+	const response = await chatbot.chat(userInput);
+	const audio = await chatbot.textToSpeech(response);
+	console.log("Chatbot: " + response);
+	// Play audio
+	await playAudioFile(audio);
+}
