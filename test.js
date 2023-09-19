@@ -26,6 +26,8 @@ const settings = {
 	interviewer_surname: "Doe",
 	my_name: "Juled",
 	my_surname: "Zaganjori",
+	language: "English",
+	tts_voice: "en-US-RogerNeural",
 	link_to_resume: "https://juledz.com/resume.pdf",
 };
 
