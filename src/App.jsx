@@ -1,16 +1,18 @@
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "./components/Experience";
+import UserInput from "./components/UserInput";
+import { useState } from "react";
 
 function App() {
+	const [response, setResponse] = useState();
+
 	return (
-		<div className="Canvas">
-			<Canvas shadows camera={{ position: [0, 0, 8], fov: 42 }}>
+		<div className="canvas-wrapper">
+			<Canvas shadows camera={{ position: [0, 0, 8], fov: 42 }} className="canvas">
 				<color attach="background" args={["#ececec"]} />
-				<Experience />
+				<Experience response={response} />
 			</Canvas>
-      <div className="user-inputs">
-      
-      </div>
+			<UserInput setResponse={setResponse} />
 		</div>
 	);
 }

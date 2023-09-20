@@ -9,14 +9,14 @@ dotenv.config();
 // Express
 const app = express();
 
+app.use(express.static("dist"));
+
 // Socket.io
 const server = createServer(app);
 const io = new Server(server);
 
 // Chatbot
 const chatbot = new Chatbot();
-
-app.use(express.static("public"));
 
 io.on("connection", (socket) => {
 	console.log(`CONNECTED ${socket.id}`);
@@ -31,14 +31,14 @@ io.on("connection", (socket) => {
 		settings = JSON.parse(JSON.stringify(settings));
 		try {
 			chatbot.initialize(settings);
-			socket.emit("response", true);
+			socket.emit("responseInit", true);
 		} catch (err) {
 			console.log(err);
-			socket.emit("response", false);
+			socket.emit("responseInit", false);
 		}
 	});
 
-	socket.on("question", (data) => {
+	socket.on("message", (data) => {
 		data = JSON.parse(JSON.stringify(data));
 		console.log(`QUESTION (${socket.id}): ${data.question}`);
 		async function chat() {
@@ -46,7 +46,7 @@ io.on("connection", (socket) => {
 			const speechData = await chatbot.textToSpeech(response);
 			console.log(`RESPONSE (${socket.id}): ${response}`);
 			console.log(`AUDIO (${socket.id}): ${speechData}`);
-			socket.emit("response", speechData);
+			socket.emit("responseMessage", speechData);
 		}
 		chat();
 	});

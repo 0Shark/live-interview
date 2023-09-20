@@ -4,7 +4,7 @@ import { Avatar } from "./Avatar";
 import { Desk } from "./Desk";
 import { useEffect, useRef, useState } from "react";
 
-export const Experience = () => {
+export const Experience = ({response}) => {
 	const controls = useRef();
 
 	// useEffect(() => {
@@ -39,7 +39,7 @@ export const Experience = () => {
 				target={[0, -0.9, 9]}
         ref={controls}
 			/>
-			<Avatar position={[0, -3, 5]} scale={2} />
+			<Avatar position={[0, -3, 5]} scale={2} response={response} />
 			<Desk position={[-0.25, -3.05, 5]} scale={0.05} />
 			<Environment preset="sunset" />
 			<mesh>
