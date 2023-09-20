@@ -28,19 +28,23 @@ const settings = {
 	my_surname: "Zaganjori",
 	language: "English",
 	tts_voice: "en-US-RogerNeural",
+	speechLanguage: "en-US",
 	link_to_resume: "https://juledz.com/resume.pdf",
 };
 
 // Initialize the chatbot
-const chatbot = new Chatbot(settings);
-await chatbot.initialize();
+const chatbot = new Chatbot();
+await chatbot.initialize(settings);
 // Start CLI chat
 while (true) {
-	// Get user input
-	const userInput = await readLineAsync("You: ");
+	// Get user input through CLI
+	// const userInput = await readLineAsync("You: ");
+	// Get user input through speech
+	const userInput = await chatbot.speechToText();
+	// Get chatbot response
 	const response = await chatbot.chat(userInput);
-	const audio = await chatbot.textToSpeech(response);
-	console.log("Chatbot: " + response);
+	// Convert text to speech
+	const speechData = await chatbot.textToSpeech(response);
 	// Play audio
-	await playAudioFile(audio);
+	await playAudioFile(speechData[0]);
 }

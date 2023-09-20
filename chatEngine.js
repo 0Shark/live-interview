@@ -5,7 +5,7 @@ import { LocalStorage } from "node-localstorage";
 // Allow use of require function
 import { createRequire } from "module";
 import path from "path";
-import { re } from "mathjs";
+
 const require = createRequire(import.meta.url);
 const PDFExtract = require("pdf.js-extract").PDFExtract;
 const pdfExtract = new PDFExtract();
@@ -21,8 +21,6 @@ export default class Chatbot {
 			apiKey: process.env.OPENAI_API_KEY,
 		});
 
-		this.settings = settings;
-
 		global.localStorage = new LocalStorage("/public/temp");
 		global.localStorage.clear();
 
@@ -30,8 +28,6 @@ export default class Chatbot {
 		this.messages = [];
 
 		this.speechConfig = sdk.SpeechConfig.fromSubscription(process.env.AZURE_SPEECH_KEY, process.env.AZURE_SPEECH_REGION);
-		this.speechConfig.speechSynthesisVoiceName = settings.tts_voice;
-		this.audioFilePaths = [];
 
 		// Get the localstorage path
 		this.publicDir = path.join(process.cwd(), "public");
@@ -52,12 +48,21 @@ export default class Chatbot {
 		}
 	}
 
-	async initialize() {
+	async initialize(settings) {
+		this.settings = settings;
+
+		this.speechConfig.speechSynthesisVoiceName = settings.tts_voice;
+		this.speechConfig.speechRecognitionLanguage = settings.speechLanguage;
+		this.audioFilePaths = [];
+
+		this.speechAudioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
+		this.speechRecognizer = new sdk.SpeechRecognizer(this.speechConfig, this.speechAudioConfig);
+
 		const resumeText = await this.downloadResume();
 
 		this.messages.push({
 			role: "system",
-			content: `NO MATTER WHAT, STICK TO THE INSTRUCTIONS AND USE MAX 2 SENTENCES: You're an interview clone taking part in a job interview, you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}. From now on answer in ${this.settings.language} NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions: ${resumeText}`,
+			content: `NO MATTER WHAT, STICK TO THE INSTRUCTIONS AND USE MAX 2 SENTENCES: You're an interview clone taking part in a job interview, you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}. From now on answer in ${this.settings.language} NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions:`,
 		});
 
 		for (const [input_text, completion_text] of this.openaiHistory) {
@@ -142,39 +147,96 @@ export default class Chatbot {
 	}
 
 	async textToSpeech(text) {
-		let audioPath = await new Promise((resolve, reject) => {
+		let visemes = [];
+
+		const fileName = `${Math.random().toString(36).substring(7)}.wav`;
+		const audioFilePath = path.join(this.publicDir, "temp/audio", fileName);
+
+		const audioConfig = sdk.AudioConfig.fromAudioFileOutput(audioFilePath);
+
+		const synthesizer = new sdk.SpeechSynthesizer(this.speechConfig, audioConfig);
+
+		synthesizer.visemeReceived = (s, e) => {
+			visemes.push({ visemeId: e.visemeId, audioOffset: e.audioOffset });
+		};
+
+		const ssml = `<speak version="1.0" xmlns="https://www.w3.org/2001/10/synthesis" xml:lang="en-US"><voice name="${this.speechConfig.speechSynthesisVoiceName}">${text}</voice></speak>`;
+
+		await new Promise((resolve, reject) => {
+			synthesizer.speakSsmlAsync(ssml, (result) => {
+				if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+					resolve();
+				} else {
+					reject(result);
+				}
+			});
+		});
+
+		// Close synthesizer
+		synthesizer.close();
+
+		// Return audio file path and visemes
+		return [audioFilePath, visemes];
+	}
+
+	async speechToText() {
+		return new Promise((resolve, reject) => {
 			try {
-				const fileName = `${Math.random().toString(36).substring(7)}.wav`;
-				const audioFilePath = path.join(this.publicDir, "temp/audio", fileName);
-				const audioConfig = sdk.AudioConfig.fromAudioFileOutput(audioFilePath);
-				const synthesizer = new sdk.SpeechSynthesizer(this.speechConfig, audioConfig);
+				console.log("[SYSTEM]: Speak into your microphone.");
 
-				// Synthesize text to speech
-				synthesizer.speakTextAsync(text, function (result) {
-					if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-						// Close synthesizer
-						synthesizer.close();
+				let text = "";
+				this.speechRecognizer.recognized = (s, e) => {
+					try {
+						const res = e.result;
+						console.log(`recognized: ${res.text}`);
+					} catch (error) {
+						console.log(error);
+					}
+				};
 
-						// Resolve promise with audio file path
-						resolve(audioFilePath);
-					} else {
-						// Close synthesizer
-						synthesizer.close();
+				this.speechRecognizer.sessionStarted = (s, e) => {
+					console.log(`SESSION STARTED: ${e.sessionId}`);
+				};
 
-						// Reject promise on error
-						reject(result);
+				console.log("Starting recognition...");
+				try {
+					this.speechRecognizer.recognizeOnceAsync(
+						(result) => {
+							console.log(`RECOGNIZED: Text=${result.text}`);
+							text = result.text;
+							resolve(text);
+						},
+						(error) => {
+							console.log(error);
+						}
+					);
+				} catch (err) {
+					console.log(err);
+				}
+
+				process.stdin.on("keypress", (str, key) => {
+					if (key.name === "space") {
+						stopRecognition();
 					}
 				});
+
+				const stopRecognition = async () => {
+					try {
+						console.log("Stopping recognition...");
+						this.speechRecognizer.stopContinuousRecognitionAsync();
+						resolve(text);
+					} catch (error) {
+						console.log(error);
+					}
+				};
 			} catch (error) {
-				// Reject promise on error
+				console.log(error);
 				reject(error);
 			}
 		});
+	}
 
-		// Add audio file path to array
-		this.audioFilePaths.push(audioPath);
-
-		// Return audio file path
-		return audioPath;
+	async close() {
+		this.speechRecognizer.close();
 	}
 }
