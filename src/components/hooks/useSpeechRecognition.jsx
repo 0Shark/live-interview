@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
-export const useSpeechRecognition = (speechLanguage, tts_voice) => {
-	const [speechText, setSpeechText] = useState("");
-
+export const useSpeechRecognition = (speechLanguage, tts_voice, speechText, setSpeechText, setListening) => {
 	let speechConfig = sdk.SpeechConfig.fromSubscription(import.meta.env.VITE_AZURE_SPEECH_KEY, import.meta.env.VITE_AZURE_SPEECH_REGION);
 
 	speechConfig.speechSynthesisVoiceName = tts_voice;
@@ -15,26 +13,31 @@ export const useSpeechRecognition = (speechLanguage, tts_voice) => {
 	const updateSpeechConfig = (newSpeechLanguage, newTtsVoice) => {
 		speechConfig.speechSynthesisVoiceName = newTtsVoice;
 		speechConfig.speechRecognitionLanguage = newSpeechLanguage;
+		speechRecognizer.close();
 		speechRecognizer = new sdk.SpeechRecognizer(speechConfig, speechAudioConfig);
 	};
 
 	const startListening = () => {
-		setIsListening(true);
+		setListening(true);
+		speechRecognizer = new sdk.SpeechRecognizer(speechConfig, speechAudioConfig);
 
-		speechRecognizer.recognizing = (_, event) => {
-			setSpeechText(event.result.text);
-		};
+		speechRecognizer.recognizeOnceAsync((result) => {
+			speechRecognizer.recognizing = (_, event) => {
+				setSpeechText(event.result.text);
+			};
 
-		speechRecognizer.recognized = (_, event) => {
-			setSpeechText(event.result.text);
-		};
-
-		speechRecognizer.startContinuousRecognitionAsync();
+			if (result.reason === ResultReason.RecognizedSpeech) {
+				speechRecognizer.recognizing = null;
+				setSpeechText(result.text);
+				setListening(false);
+			}
+		});
 	};
 
 	const stopListening = () => {
-		setIsListening(false);
-		speechRecognizer.stopContinuousRecognitionAsync();
+		speechRecognizer.recognizing = null;
+		speechRecognizer.close();
+		setListening(false);
 	};
 
 	return {

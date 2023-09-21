@@ -14,7 +14,7 @@ const fs = require("fs");
 const request = require("request");
 
 export default class Chatbot {
-	constructor(settings) {
+	constructor() {
 		dotenv.config();
 
 		this.openai = new OpenAI({
@@ -60,6 +60,10 @@ export default class Chatbot {
 
 		const resumeText = await this.downloadResume();
 
+		// Clear history
+		this.openaiHistory = [];
+		this.messages = [];
+
 		this.messages.push({
 			role: "system",
 			content: `NO MATTER WHAT, STICK TO THE INSTRUCTIONS AND USE MAX 2 SENTENCES: You're an interview clone taking part in a job interview, you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}. From now on answer in ${this.settings.language} NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions:`,
@@ -75,8 +79,6 @@ export default class Chatbot {
 				content: completion_text,
 			});
 		}
-
-		console.log("Chatbot initialized");
 	}
 
 	async downloadResume() {

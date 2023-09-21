@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import { useChatbot } from "./hooks/useChatbot";
 import debounce from "lodash.debounce";
+import ErrorDisplay from "./ErrorDisplay";
+import SettingsDisplay from "./SettingsDisplay";
 
 const UserInput = ({ setResponse }) => {
 	const [settings, setSettings] = useState({
@@ -17,58 +19,79 @@ const UserInput = ({ setResponse }) => {
 		link_to_resume: "https://juledz.com/resume.pdf",
 	});
 
-	const { isChatbotReady, initChatbot, sendMessage, error } = useChatbot(setResponse, settings);
+	const [visible, setVisible] = useState(false);
+
+	const [isChatbotReady, setIsChatbotReady] = useState(false);
+
+	const { initChatbot, sendMessage, error } = useChatbot(setResponse, settings, setIsChatbotReady);
 
 	useEffect(() => {
-		initChatbot();
+		initChatbot().then((ready) => {
+			setIsChatbotReady(ready);
+		});
+
 		updateSpeechConfig(settings.speechLanguage, settings.tts_voice);
 	}, [settings]);
 
-	const debouncedSendMessage = debounce((message) => {
-		sendMessage(message);
-	}, 1000);
-
-	const { startListening, stopListening, speechText, updateSpeechConfig } = useSpeechRecognition(settings.speechLanguage, settings.tts_voice);
-
+	const [speechText, setSpeechText] = useState("");
 	const [listening, setListening] = useState(false);
+
+	const { startListening, stopListening, updateSpeechConfig } = useSpeechRecognition(
+		settings.speechLanguage,
+		settings.tts_voice,
+		speechText,
+		setSpeechText,
+		setListening
+	);
+
+	const debouncedSendMessage = debounce((message) => {
+		if (!message) return;
+		if (listening) {
+			stopListening();
+		}
+		sendMessage(message);
+	}, 500);
 
 	const toggleListening = () => {
 		if (listening) {
+			console.log("stop listening");
 			stopListening();
 		} else {
+			console.log("start listening");
 			startListening();
 		}
-		setListening(!listening);
 	};
 
 	return (
-		<section className="chatbotInputContainer">
-			<div className="chatbotInput" data-listening={listening}>
-				{isChatbotReady ? (
-					<form onSubmit={(e) => e.preventDefault()}>
-						<input value={speechText} readOnly />
+		<div className="chatbotInputWrap">
+			{isChatbotReady ? (
+				<section className="chatbotInputContainer">
+					<div className="chatbotInput" data-listening={listening}>
+						<div className="chatbotInput_container">
+							<form onSubmit={(e) => e.preventDefault()}>
+								<input value={speechText} onChange={(e) => setSpeechText(e.target.value)} placeholder="Type a message..." />
 
-						<button onClick={toggleListening}>
-							<i className="fa fa-microphone" />
-						</button>
+								<button className="mircrophone" onClick={toggleListening}>
+									<i className="fa fa-microphone" />
+								</button>
 
-						<button type="submit" onClick={() => debouncedSendMessage(speechText)}>
-							<i className="fa fa-paper-plane" />
-						</button>
-					</form>
-				) : (
-					// <ErrorDisplay error={error} />
-					<div className="errorDisplay">
-						<h1>Oops!</h1>
-						<p>Something went wrong. Please refresh the page.</p>
+								<button type="submit" onClick={() => debouncedSendMessage(speechText)}>
+									<i className="fa fa-paper-plane" />
+								</button>
+							</form>
+							<div className="settingsButton" onClick={() => setVisible(true)}>
+								<i className="fas fa-cog"></i>
+							</div>
+						</div>
 					</div>
-				)}
-			</div>
-			<div className="chatbotSettings">
-				{/* <SettingsDisplay settings={settings} setSettings={setSettings} /> */}
-				Settings go here
-			</div>
-		</section>
+					<div className="chatbotSettings" data-visible={visible}>
+						<SettingsDisplay settings={settings} setSettings={setSettings} visible={visible} setVisible={setVisible} />
+					</div>
+				</section>
+			) : (
+				<ErrorDisplay error={error} />
+			)}
+		</div>
 	);
 };
 

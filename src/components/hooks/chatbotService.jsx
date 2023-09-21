@@ -3,14 +3,14 @@ import { io } from "socket.io-client";
 class ChatbotService {
 	constructor() {
 		this.host = window.location.hostname;
-		this.socket = io("ws://" + this.host + ":80");
+		this.socket = io("ws://" + this.host + ":5000");
 	}
 
 	async init(settings) {
 		this.socket.emit("init", settings);
 
 		let response = await new Promise((resolve, reject) => {
-			socket.on("responseInit", (response) => {
+			this.socket.on("responseInit", (response) => {
 				if (response) {
 					resolve(response);
 				} else {
@@ -23,10 +23,10 @@ class ChatbotService {
 	}
 
 	async sendMessage(message) {
-		this.socket.emit("message", message);
+		this.socket.emit("message", { "question": message });
 
 		let response = await new Promise((resolve, reject) => {
-			socket.on("responseMessage", (response) => {
+			this.socket.on("responseMessage", (response) => {
 				if (response) {
 					resolve(response);
 				} else {

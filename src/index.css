@@ -1,31 +1,224 @@
+@import "/node_modules/@fortawesome/fontawesome-pro/css/all.css";
+
 #root {
-  width: 100vw;
-  height: 100vh;
+	width: 100vw;
+	height: 100vh;
 }
 
 body {
-  margin: 0;
+	margin: 0;
+}
+
+html {
+	font-size: 13px;
+}
+
+@media screen and (min-width: 1000px) {
+	html {
+		/* font-size: calc([minimum size] + ([maximum size] - [minimum size]) * ((100vw - [minimum viewport width]) / ([maximum viewport width] - [minimum viewport width]))); */
+		font-size: calc(13px + 3 * ((100vw - 1000px) / 900));
+	}
+}
+
+@media screen and (min-width: 1900px) {
+	html {
+		font-size: 20px;
+	}
 }
 
 .canvas-wrapper {
-  position: relative;
-  display: grid;
-  height: 100vh;
+	position: relative;
+	display: grid;
+	height: 100vh;
 }
 
 .chatbotInputContainer {
-  position: absolute;
-  bottom: 0;
-  width: 90%;
-  height: 100px;
-  background-color: #ffffffa9;
-  border-top: 1px solid #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  left: 0;
-  right: 0;
-  margin: 0 auto;
-  bottom: 2em;
-  border-radius: 2em;
+	position: absolute;
+	pointer-events: all;
+	bottom: 0;
+	width: 90%;
+	height: fit-content;
+	background-color: #ffffffa9;
+	border-top: 1px solid #ccc;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	left: 0;
+	right: 0;
+	margin: 0 auto;
+	bottom: 2em;
+	padding: 1em 0;
+	border-radius: 20em;
+}
+
+.chatbotSettings {
+	position: fixed;
+	top: 10vh;
+	width: calc(65% - 8em);
+	height: calc(70vh - 8em);
+	bottom: 10vh;
+	left: 0;
+	right: 0;
+	margin: auto;
+	background: #181c20;
+	color: #fff;
+	border-radius: 2.4em;
+	padding: 4em;
+	transition: all 0.3s ease-in-out;
+}
+
+.chatbotSettings[data-visible="false"] {
+	transform: scale(0.5);
+	opacity: 0;
+	pointer-events: none;
+}
+
+.chatbotInput {
+	width: 100%;
+	padding: 0 3em 0 1.2em;
+}
+
+.chatbotInput .chatbotInput_container {
+	display: grid;
+	grid-template-columns: auto max-content;
+	align-items: center;
+	gap: 2em;
+}
+
+.chatbotInput .chatbotInput_container i {
+	cursor: pointer;
+	color: #3f100c;
+	font-size: 1.6em;
+}
+
+.chatbotInput .chatbotInput_container i:hover {
+	transform: scale(1.3);
+}
+
+.chatbotSettings .closeButton {
+	position: absolute;
+	top: 3em;
+	right: 3em;
+	cursor: pointer;
+	font-size: 1.5rem;
+	transition: all 0.3s ease-in-out;
+	width: 0.8em;
+	height: 0.8em;
+	border-radius: 50%;
+	padding: 0.5rem;
+	border: 1px solid #fff;
+	display: grid;
+	justify-items: center;
+	align-items: center;
+}
+
+.chatbotSettings .closeButton:hover i {
+	transform: scale(1.2);
+	color: #181c20;
+}
+
+.chatbotSettings .closeButton i {
+	font-size: 0.8rem;
+	line-height: 0;
+}
+
+.chatbotSettings .closeButton:hover {
+	background: #fff;
+}
+
+.settingsContainer {
+	display: flex;
+	height: 100%;
+	flex-direction: column;
+}
+
+.settingsContainer form.settings {
+	display: grid;
+	gap: 0.5em;
+	grid-template-columns: 1fr 1fr;
+	height: 100%;
+	column-gap: 2em;
+}
+
+.settingsContainer form.settings .setting {
+	display: flex;
+	color: #464c5f;
+	flex-direction: column;
+	gap: 0.5em;
+}
+
+.settingsContainer form.settings .setting input[type="text"],
+.settingsContainer form.settings .setting select {
+	font-size: 1em;
+	padding: 0.4rem 1em;
+	border: none;
+	background: #373c4b;
+	border-radius: 0.3em;
+	color: #ffffff63;
+}
+
+.settingsContainer form.settings button.btn_outline {
+	background: #373c4b;
+	border: 1px solid #fff;
+	color: #fff;
+	padding: 1em 2em;
+	border-radius: 30em;
+	margin-top: 2em;
+	cursor: pointer;
+}
+
+.chatbotInput .chatbotInput_container form {
+	display: grid;
+	width: 100%;
+	grid-template-columns: auto max-content max-content;
+	gap: 1.5em;
+}
+
+.chatbotInput .chatbotInput_container form input {
+	border-radius: 25em;
+	background: #fff;
+	border: none;
+	padding: 0.4em 2em;
+	font-size: 1em;
+}
+
+.chatbotInput .chatbotInput_container form button {
+	display: grid;
+	cursor: pointer;
+	justify-items: center;
+	align-items: center;
+	width: 4rem;
+	height: 4rem;
+	border: none;
+	border-radius: 50%;
+	padding: 0;
+	margin: 0;
+	font-size: 0.8em;
+	transition: all 0.3s ease-in-out;
+}
+
+.chatbotInput .chatbotInput_container form button:hover {
+	background: #3f100c;
+	color: #fff;
+}
+
+.chatbotInput .chatbotInput_container form button i {
+	color: inherit;
+}
+
+.chatbotInput .chatbotInput_container form input:focus {
+	outline: none;
+}
+
+.chatbotInputWrap {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.chatbotInput[data-listening="true"] .chatbotInput_container form input {
+    pointer-events: none;
 }

@@ -46,9 +46,15 @@ const corresponding = {
 };
 
 export function Avatar(props) {
+	useEffect(() => {
+		if (props.response) {
+			console.log("Got new response: ", props.response);
+		}
+	}, [props.response]);
+
 	const { playAudio, script, headFollow, smoothMorphTarget, morphTargetSmoothing, animationName, seated } = useControls({
 		playAudio: false,
-    seated: false,
+		seated: false,
 		headFollow: true,
 		smoothMorphTarget: true,
 		morphTargetSmoothing: 0.5,
@@ -125,26 +131,26 @@ export function Avatar(props) {
 
 	const group = useRef();
 
-  // Load all custom animations
-  let animationFilesArray = Object.values(animationFiles);
-  let customAnimations = [];
-  for (let i = 0; i < animationFilesArray.length; i++) {
-    let { animations } = useFBX(animationFilesArray[i]);
-    animations[0].name = Object.keys(animationFiles)[i];
-    customAnimations.push(animations[0]);
-  }
+	// Load all custom animations
+	let animationFilesArray = Object.values(animationFiles);
+	let customAnimations = [];
+	for (let i = 0; i < animationFilesArray.length; i++) {
+		let { animations } = useFBX(animationFilesArray[i]);
+		animations[0].name = Object.keys(animationFiles)[i];
+		customAnimations.push(animations[0]);
+	}
 	const { actions } = useAnimations([idleAnimation[0], ...customAnimations], group);
 
 	useEffect(() => {
 		nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary["viseme_I"]] = 1;
 		nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary["viseme_I"]] = 1;
 		if (playAudio) {
-      audio.play();
-      setAnimation(animationName);
-    } else {
-      setAnimation("Sitting Idle");
-      audio.pause(); 
-    }
+			audio.play();
+			setAnimation(animationName);
+		} else {
+			setAnimation("Sitting Idle");
+			audio.pause();
+		}
 	}, [playAudio, script, animationName]);
 
 	useEffect(() => {

@@ -13,8 +13,11 @@ app.use(express.static("dist"));
 
 // Socket.io
 const server = createServer(app);
-const io = new Server(server);
-
+const io = new Server(server, {
+	cors: {
+		origin: "*",
+	},
+});
 // Chatbot
 const chatbot = new Chatbot();
 
@@ -32,9 +35,11 @@ io.on("connection", (socket) => {
 		try {
 			chatbot.initialize(settings);
 			socket.emit("responseInit", true);
+			console.log(`INITIALIZED ${socket.id}`);
 		} catch (err) {
 			console.log(err);
 			socket.emit("responseInit", false);
+			console.log(`INIT FAILED ${socket.id}`);
 		}
 	});
 
@@ -45,7 +50,7 @@ io.on("connection", (socket) => {
 			const response = await chatbot.chat(data.question);
 			const speechData = await chatbot.textToSpeech(response);
 			console.log(`RESPONSE (${socket.id}): ${response}`);
-			console.log(`AUDIO (${socket.id}): ${speechData}`);
+			console.log(`AUDIO (${socket.id}): ${speechData[0]}`); // speechData[0] is the audio file path
 			socket.emit("responseMessage", speechData);
 		}
 		chat();
