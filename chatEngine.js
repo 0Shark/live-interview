@@ -14,14 +14,14 @@ const fs = require("fs");
 const request = require("request");
 
 export default class Chatbot {
-	constructor() {
+	constructor(public_path) {
 		dotenv.config();
 
 		this.openai = new OpenAI({
 			apiKey: process.env.OPENAI_API_KEY,
 		});
 
-		global.localStorage = new LocalStorage("/public/temp");
+		global.localStorage = new LocalStorage(`/${public_path}/temp`);
 		global.localStorage.clear();
 
 		this.openaiHistory = [];
@@ -30,7 +30,7 @@ export default class Chatbot {
 		this.speechConfig = sdk.SpeechConfig.fromSubscription(process.env.AZURE_SPEECH_KEY, process.env.AZURE_SPEECH_REGION);
 
 		// Get the localstorage path
-		this.publicDir = path.join(process.cwd(), "public");
+		this.publicDir = path.join(process.cwd(), public_path);
 
 		// Create temp folder
 		if (!fs.existsSync(this.publicDir + "/temp")) {
