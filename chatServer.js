@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import Chatbot from "./chatEngine.js";
+import process from "process";
 
 dotenv.config();
 
@@ -19,7 +20,8 @@ const io = new Server(server, {
 	},
 });
 // Chatbot
-const chatbot = new Chatbot();
+// If in production, save audio files to dist folder
+const chatbot = new Chatbot(process.env.NODE_ENV === "production" ? "dist" : "public");
 
 io.on("connection", (socket) => {
 	console.log(`CONNECTED ${socket.id}`);
