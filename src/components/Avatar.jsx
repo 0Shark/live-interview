@@ -6,14 +6,14 @@ import * as THREE from "three";
 
 const animationFiles = {
 	"Type To Sit": "/animations/Type To Sit.fbx",
-	"Typing": "/animations/Typing.fbx",
-	"Victory": "/animations/Victory.fbx",
+	Typing: "/animations/Typing.fbx",
+	Victory: "/animations/Victory.fbx",
 	"Wave Hip Hop Dance": "/animations/Wave Hip Hop Dance.fbx",
-	"Waving": "/animations/Waving.fbx",
+	Waving: "/animations/Waving.fbx",
 	"Asking Question": "/animations/Asking Question.fbx",
 	"Having A Meeting": "/animations/Having A Meeting.fbx",
 	"Hip Hop Dancing": "/animations/Hip Hop Dancing.fbx",
-	"Idle": "/animations/Idle.fbx",
+	Idle: "/animations/Idle.fbx",
 	"Seated Idle": "/animations/Seated Idle.fbx",
 	"Sit To Stand": "/animations/Sit To Stand.fbx",
 	"Sit To Type": "/animations/Sit To Type.fbx",
@@ -27,34 +27,43 @@ const animationFiles = {
 	"Standing Greeting": "/animations/Standing Greeting.fbx",
 };
 
+const sittingTalkingAnimations = ["Sitting Talking", "Sitting Idle", "Having A Meeting"];
+
 // Preload animations
 Object.values(animationFiles).forEach((url) => {
 	useFBX.preload(url);
 });
 
 // ReadyPlayerMe visemes map
-const corresponding = {
-	A: "viseme_PP",
-	B: "viseme_kk",
-	C: "viseme_I",
-	D: "viseme_AA",
-	E: "viseme_O",
-	F: "viseme_U",
-	G: "viseme_FF",
-	H: "viseme_TH",
-	X: "viseme_PP",
+const azureToOculusVisemes = {
+	0: "viseme_sil",
+	1: "viseme_PP",
+	2: "viseme_aa",
+	3: "viseme_aa",
+	4: "viseme_E",
+	5: "viseme_RR",
+	6: "viseme_I",
+	7: "viseme_U",
+	8: "viseme_O",
+	9: "viseme_aa",
+	10: "viseme_O",
+	11: "viseme_I",
+	12: "viseme_sil",
+	13: "viseme_RR",
+	14: "viseme_nn",
+	15: "viseme_SS",
+	16: "viseme_CH",
+	17: "viseme_TH",
+	18: "viseme_FF",
+	19: "viseme_DD",
+	20: "viseme_kk",
+	21: "viseme_PP",
 };
 
 export function Avatar(props) {
-	useEffect(() => {
-		if (props.response) {
-			console.log("Got new response: ", props.response);
-		}
-	}, [props.response]);
-
 	const { playAudio, script, headFollow, smoothMorphTarget, morphTargetSmoothing, animationName, seated } = useControls({
-		playAudio: false,
-		seated: false,
+		playAudio: true,
+		seated: true,
 		headFollow: true,
 		smoothMorphTarget: true,
 		morphTargetSmoothing: 0.5,
@@ -69,18 +78,40 @@ export function Avatar(props) {
 		},
 	});
 
-	const audio = useMemo(() => new Audio(`/audios/${script}.mp3`), [script]);
-	const jsonFile = useLoader(THREE.FileLoader, `audios/${script}.json`);
-	const lipsync = JSON.parse(jsonFile);
+	let audio = useMemo(() => {
+		let audioPath = props.response.speechData.audioFilePath;
+		if (!audioPath) {
+			audioPath = "";
+		}
+		// turn to path to URL which is inside the public/temp/audio folder
+		audioPath = audioPath.replace(/\\/g, "/");
+		// Get audio file name
+		audioPath = audioPath.split("/").pop();
+		// Add URL to audio file
+		audioPath = `/temp/audio/${audioPath}`;
+
+		console.log("Received response: ", props.response.response);
+
+		return new Audio(audioPath);
+	}, [props.response]);
+
+	let lipsync = useMemo(() => {
+		let lipsync = props.response.speechData.visemes;
+		if (lipsync) {
+			return lipsync;
+		} else {
+			return [];
+		}
+	}, [props.response]);
 
 	useFrame(() => {
-		const currentAudioTime = audio.currentTime;
+		let currentAudioTime = audio.currentTime;
 		if (audio.paused || audio.ended) {
 			setAnimation("Sitting Idle");
 			return;
 		}
 
-		Object.values(corresponding).forEach((value) => {
+		Object.values(azureToOculusVisemes).forEach((value) => {
 			if (!smoothMorphTarget) {
 				nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[value]] = 0;
 				nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary[value]] = 0;
@@ -99,20 +130,24 @@ export function Avatar(props) {
 			}
 		});
 
-		for (let i = 0; i < lipsync.mouthCues.length; i++) {
-			const mouthCue = lipsync.mouthCues[i];
-			if (currentAudioTime >= mouthCue.start && currentAudioTime <= mouthCue.end) {
+		for (let i = 0; i < lipsync.length; i++) {
+			let visemeId = lipsync[i].visemeId;
+			// lipsync[i].audioOffset is in milliseconds, so divide by 1000 to get seconds
+			let visemeOffsetTime = lipsync[i].audioOffset / 1000;
+			let nextVisemeOffsetTime = lipsync[i + 1] ? lipsync[i + 1].audioOffset / 1000 : 0;
+			
+			if (currentAudioTime >= visemeOffsetTime && currentAudioTime < nextVisemeOffsetTime) {
 				if (!smoothMorphTarget) {
-					nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[corresponding[mouthCue.value]]] = 1;
-					nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary[corresponding[mouthCue.value]]] = 1;
+					nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[azureToOculusVisemes[visemeId]]] = 1;
+					nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary[azureToOculusVisemes[visemeId]]] = 1;
 				} else {
-					nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[corresponding[mouthCue.value]]] = THREE.MathUtils.lerp(
-						nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[corresponding[mouthCue.value]]],
+					nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[azureToOculusVisemes[visemeId]]] = THREE.MathUtils.lerp(
+						nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[azureToOculusVisemes[visemeId]]],
 						1,
 						morphTargetSmoothing
 					);
-					nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary[corresponding[mouthCue.value]]] = THREE.MathUtils.lerp(
-						nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary[corresponding[mouthCue.value]]],
+					nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary[azureToOculusVisemes[visemeId]]] = THREE.MathUtils.lerp(
+						nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary[azureToOculusVisemes[visemeId]]],
 						1,
 						morphTargetSmoothing
 					);
@@ -151,7 +186,7 @@ export function Avatar(props) {
 			setAnimation("Sitting Idle");
 			audio.pause();
 		}
-	}, [playAudio, script, animationName]);
+	}, [playAudio, props.response, animationName]);
 
 	useEffect(() => {
 		if (actions[animation]) {

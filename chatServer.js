@@ -47,11 +47,22 @@ io.on("connection", (socket) => {
 		data = JSON.parse(JSON.stringify(data));
 		console.log(`QUESTION (${socket.id}): ${data.question}`);
 		async function chat() {
-			const response = await chatbot.chat(data.question);
-			const speechData = await chatbot.textToSpeech(response);
-			console.log(`RESPONSE (${socket.id}): ${response}`);
-			console.log(`AUDIO (${socket.id}): ${speechData[0]}`); // speechData[0] is the audio file path
-			socket.emit("responseMessage", speechData);
+			try {
+				const response = await chatbot.chat(data.question);
+				const speechData = await chatbot.textToSpeech(response);
+				console.log(`RESPONSE (${socket.id}): ${response}`);
+				console.log(`AUDIO (${socket.id}): ${speechData.audioFilePath}`);
+				socket.emit("responseMessage", {
+					response: response,
+					speechData: speechData,
+				});
+			} catch (err) {
+				console.log(`ERROR (${socket.id}): ${err}`);
+				socket.emit("responseMessage", {
+					response: "Sorry, I don't understand that.",
+					speechData: null,
+				});
+			}
 		}
 		chat();
 	});

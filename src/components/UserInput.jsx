@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import { useChatbot } from "./hooks/useChatbot";
 import debounce from "lodash.debounce";
 import ErrorDisplay from "./ErrorDisplay";
 import SettingsDisplay from "./SettingsDisplay";
 
-const UserInput = ({ setResponse }) => {
+const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
+	const [visible, setVisible] = useState(false);
+
 	const [settings, setSettings] = useState({
 		job_title: "Software Engineer",
 		company_name: "Google",
@@ -18,10 +20,6 @@ const UserInput = ({ setResponse }) => {
 		speechLanguage: "en-US",
 		link_to_resume: "https://juledz.com/resume.pdf",
 	});
-
-	const [visible, setVisible] = useState(false);
-
-	const [isChatbotReady, setIsChatbotReady] = useState(false);
 
 	const { initChatbot, sendMessage, error } = useChatbot(setResponse, settings, setIsChatbotReady);
 
@@ -62,6 +60,29 @@ const UserInput = ({ setResponse }) => {
 		}
 	};
 
+	const inputRef = useRef(null);
+
+	useEffect(() => {
+		if (listening) {
+			inputRef.current.focus();
+		}
+	}, [listening]);
+
+	// When user presses enter, send message
+	useEffect(() => {
+		const handleKeyDown = (e) => {
+			if (e.key === "Enter") {
+				debouncedSendMessage(speechText);
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [speechText]);
+
 	return (
 		<div className="chatbotInputWrap">
 			{isChatbotReady ? (
@@ -69,7 +90,7 @@ const UserInput = ({ setResponse }) => {
 					<div className="chatbotInput" data-listening={listening}>
 						<div className="chatbotInput_container">
 							<form onSubmit={(e) => e.preventDefault()}>
-								<input value={speechText} onChange={(e) => setSpeechText(e.target.value)} placeholder="Type a message..." />
+								<input value={speechText} ref={inputRef} onChange={(e) => setSpeechText(e.target.value)} placeholder="Type a message..." />
 
 								<button className="mircrophone" onClick={toggleListening}>
 									<i className="fa fa-microphone" />
