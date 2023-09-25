@@ -61,19 +61,13 @@ const azureToOculusVisemes = {
 };
 
 export function Avatar(props) {
-	const { playAudio, script, headFollow, smoothMorphTarget, morphTargetSmoothing, animationName, seated } = useControls({
+	const { playAudio, headFollow, smoothMorphTarget, morphTargetSmoothing, animationName } = useControls({
 		playAudio: true,
-		seated: true,
 		headFollow: true,
 		smoothMorphTarget: true,
 		morphTargetSmoothing: 0.5,
-		// default scripts for testing
-		script: {
-			value: "welcome",
-			options: ["welcome", "pizzas"],
-		},
 		animationName: {
-			value: "Sitting Idle",
+			value: "Having A Meeting",
 			options: Object.keys(animationFiles),
 		},
 	});
@@ -153,6 +147,11 @@ export function Avatar(props) {
 					);
 				}
 
+				// Blink sometimes
+				if (Math.random() < 0.1) {
+					nodes.EyeLeft.morphTargetInfluences[nodes.EyeLeft.morphTargetDictionary["blink"]] = 1;
+					nodes.EyeRight.morphTargetInfluences[nodes.EyeRight.morphTargetDictionary["blink"]] = 1;
+				}
 				break;
 			}
 		}
@@ -181,7 +180,8 @@ export function Avatar(props) {
 		nodes.Wolf3D_Teeth.morphTargetInfluences[nodes.Wolf3D_Teeth.morphTargetDictionary["viseme_I"]] = 1;
 		if (playAudio) {
 			audio.play();
-			setAnimation(animationName);
+			// Choose one of the animations in the array sittingTalkingAnimations randomly
+			setAnimation(sittingTalkingAnimations[Math.floor(Math.random() * sittingTalkingAnimations.length)]);
 		} else {
 			setAnimation("Sitting Idle");
 			audio.pause();

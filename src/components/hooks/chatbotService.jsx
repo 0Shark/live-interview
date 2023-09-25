@@ -2,8 +2,7 @@ import { io } from "socket.io-client";
 
 class ChatbotService {
 	constructor() {
-		this.host = window.location.hostname;
-		this.socket = io("ws://" + this.host + ":5000");
+		this.socket = io();
 	}
 
 	async init(settings) {
@@ -23,7 +22,7 @@ class ChatbotService {
 	}
 
 	async sendMessage(message) {
-		this.socket.emit("message", { "question": message });
+		this.socket.emit("message", { question: message });
 
 		let response = await new Promise((resolve, reject) => {
 			this.socket.on("responseMessage", (response) => {

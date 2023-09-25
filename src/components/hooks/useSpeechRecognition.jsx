@@ -27,7 +27,6 @@ export const useSpeechRecognition = (speechLanguage, tts_voice, speechText, setS
 			};
 
 			if (result.reason === ResultReason.RecognizedSpeech) {
-				speechRecognizer.recognizing = null;
 				setSpeechText(result.text);
 				setListening(false);
 			}
@@ -43,7 +42,6 @@ export const useSpeechRecognition = (speechLanguage, tts_voice, speechText, setS
 	return {
 		startListening,
 		stopListening,
-		speechText,
-		updateSpeechConfig,
+		updateSpeechConfig
 	};
 };

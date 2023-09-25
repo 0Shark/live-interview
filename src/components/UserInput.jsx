@@ -6,7 +6,7 @@ import ErrorDisplay from "./ErrorDisplay";
 import SettingsDisplay from "./SettingsDisplay";
 
 const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
-	const [visible, setVisible] = useState(false);
+	const [visible, setVisible] = useState(true);
 
 	const [settings, setSettings] = useState({
 		job_title: "Software Engineer",
@@ -73,6 +73,7 @@ const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
 		const handleKeyDown = (e) => {
 			if (e.key === "Enter") {
 				debouncedSendMessage(speechText);
+				setSpeechText("");
 			}
 		};
 
@@ -81,7 +82,7 @@ const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
 		return () => {
 			document.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [speechText]);
+	});	
 
 	return (
 		<div className="chatbotInputWrap">
@@ -92,9 +93,9 @@ const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
 							<form onSubmit={(e) => e.preventDefault()}>
 								<input value={speechText} ref={inputRef} onChange={(e) => setSpeechText(e.target.value)} placeholder="Type a message..." />
 
-								<button className="mircrophone" onClick={toggleListening}>
+								{/* <button className="mircrophone" onClick={toggleListening}>
 									<i className="fa fa-microphone" />
-								</button>
+								</button> */}
 
 								<button type="submit" onClick={() => debouncedSendMessage(speechText)}>
 									<i className="fa fa-paper-plane" />

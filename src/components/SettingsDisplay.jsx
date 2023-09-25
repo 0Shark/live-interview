@@ -122,11 +122,9 @@ const SettingsDisplay = ({ settings, setSettings, visible, setVisible }) => {
 						<option value="en-US-RogerNeural">en-US-RogerNeural</option>
 						<option value="en-US-AriaNeural">en-US-AriaNeural</option>
 						<option value="en-US-GuyNeural">en-US-GuyNeural</option>
-						<option value="en-US-JennyNeural">en-US-JennyNeural</option>
 						<option value="de-DE-ConradNeural">de-DE-ConradNeural</option>
-						<option value="de-DE-KatjaNeural">de-DE-KatjaNeural</option>
-						<option value="de-DE-MarkNeural">de-DE-MarkNeural</option>
-						<option value="de-DE-PetraNeural">de-DE-PetraNeural</option>
+						<option value="de-DE-BerndNeural">de-DE-BerndNeural</option>
+						<option value="de-DE-KasperNeural">de-DE-KasperNeural</option>
 					</select>
 				</div>
 				<div className="setting">

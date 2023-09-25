@@ -14,11 +14,7 @@ app.use(express.static("dist"));
 
 // Socket.io
 const server = createServer(app);
-const io = new Server(server, {
-	cors: {
-		origin: "*",
-	},
-});
+const io = new Server(server);
 // Chatbot
 // If in production, save audio files to dist folder
 const chatbot = new Chatbot(process.env.NODE_ENV === "production" ? "dist" : "public");
