@@ -20,6 +20,13 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '16.x'
+          
+      - name: Replace values
+        shell: bash
+        env: 
+            FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME }}
+        run: |
+          sed -i.back "s|MY_FONTAWESOME_TOKEN|${FONTAWESOME_TOKEN}|g" ./.npmrc
 
       - name: npm install, build, and test
         run: |
