@@ -114,6 +114,7 @@ const SettingsDisplay = ({ settings, setSettings, visible, setVisible }) => {
 					<select name="language" id="language" value={newSettings.language} onChange={(e) => setNewSettings({ ...newSettings, language: e.target.value })}>
 						<option value="English">English</option>
 						<option value="German">German</option>
+						<option value="Albanian">Albanian</option>
 					</select>
 				</div>
 				<div className="setting">
@@ -125,6 +126,7 @@ const SettingsDisplay = ({ settings, setSettings, visible, setVisible }) => {
 						<option value="de-DE-ConradNeural">de-DE-ConradNeural</option>
 						<option value="de-DE-BerndNeural">de-DE-BerndNeural</option>
 						<option value="de-DE-KasperNeural">de-DE-KasperNeural</option>
+						<option value="sq-AL-IlirNeural">sq-AL-IlirNeural</option>
 					</select>
 				</div>
 				<div className="setting">
@@ -137,6 +139,7 @@ const SettingsDisplay = ({ settings, setSettings, visible, setVisible }) => {
 					>
 						<option value="en-US">en-US</option>
 						<option value="de-DE">de-DE</option>
+						<option value="sq-AL">sq-AL</option>
 					</select>
 				</div>
 				<div className="setting">
