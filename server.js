@@ -14,7 +14,18 @@ app.use(express.static("dist"));
 
 // Socket.io
 const server = createServer(app);
-const io = new Server(server);
+let io = null;
+// Development
+if (process.env.NODE_ENV === "production") {
+	io = new Server(server);
+} else {
+	io = new Server(server, {
+		cors: {
+			origin: "*",
+			methods: ["GET", "POST"],
+		},
+	});
+}
 // Chatbot
 // If in production, save audio files to dist folder
 const chatbot = new Chatbot(process.env.NODE_ENV === "production" ? "dist" : "public");
@@ -31,7 +42,7 @@ io.on("connection", (socket) => {
 	socket.on("init", (settings) => {
 		settings = JSON.parse(JSON.stringify(settings));
 		try {
-			chatbot.initialize(settings);
+			chatbot.initialize(settings, socket.id);
 			socket.emit("responseInit", true);
 			console.log(`INITIALIZED ${socket.id}`);
 		} catch (err) {
@@ -68,7 +79,10 @@ io.on("connection", (socket) => {
 
 io.on("disconnect", (socket) => {
 	console.log(`DISCONNECTED ${socket.id}`);
-	chatbot.close();
+	async function closeChatbot() {
+		await chatbot.close();
+	}
+	closeChatbot();
 });
 
 const port = process.env.PORT || 5000;

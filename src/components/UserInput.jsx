@@ -6,15 +6,17 @@ import ErrorDisplay from "./ErrorDisplay";
 import SettingsDisplay from "./SettingsDisplay";
 
 const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
-	const [visible, setVisible] = useState(true);
+	const urlParams = new URLSearchParams(window.location.search);
+	let showSettings = urlParams.get("showSettings") || true;
 
+	const [visible, setVisible] = useState(showSettings);
 	const [settings, setSettings] = useState({
-		job_title: "Software Engineer",
-		company_name: "Google",
-		interviewer_name: "John",
-		interviewer_surname: "Doe",
-		my_name: "Juled",
-		my_surname: "Zaganjori",
+		job_title: urlParams.get("job_title") || "Software Engineer",
+		company_name: urlParams.get("company_name") || "Google",
+		interviewer_name: urlParams.get("interviewer_name") || "John",
+		interviewer_surname: urlParams.get("interviewer_surname") || "Doe",
+		my_name: "You Led",
+		my_surname: "Zaganyori",
 		language: "English",
 		tts_voice: "en-US-RogerNeural",
 		speechLanguage: "en-US",
@@ -72,8 +74,10 @@ const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
 	useEffect(() => {
 		const handleKeyDown = (e) => {
 			if (e.key === "Enter") {
-				debouncedSendMessage(speechText);
-				setSpeechText("");
+				if (speechText !== "") {
+					debouncedSendMessage(speechText);
+					setSpeechText("");
+				}
 			}
 		};
 
@@ -82,7 +86,7 @@ const UserInput = ({ setResponse, isChatbotReady, setIsChatbotReady }) => {
 		return () => {
 			document.removeEventListener("keydown", handleKeyDown);
 		};
-	});	
+	}, [speechText]);
 
 	return (
 		<div className="chatbotInputWrap">

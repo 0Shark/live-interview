@@ -5,7 +5,7 @@ import { useState } from "react";
 
 function App() {
 	const [response, setResponse] = useState({
-		response: "",
+		response: "Hello, thank you for having me here today. I'm excited to learn more about this opportunity.",
 		speechData: {
 			audioFilePath: "",
 			visemes: null,

@@ -61,7 +61,19 @@ const azureToOculusVisemes = {
 };
 
 export function Avatar(props) {
-	const { playAudio, headFollow, smoothMorphTarget, morphTargetSmoothing, animationName } = useControls({
+	// Development
+	// const { playAudio, headFollow, smoothMorphTarget, morphTargetSmoothing, animationName } = useControls({
+	// 	playAudio: true,
+	// 	headFollow: true,
+	// 	smoothMorphTarget: true,
+	// 	morphTargetSmoothing: 0.5,
+	// 	animationName: {
+	// 		value: "Having A Meeting",
+	// 		options: Object.keys(animationFiles),
+	// 	},
+	// });
+	// Production
+	const { playAudio, headFollow, smoothMorphTarget, morphTargetSmoothing, animationName } = {
 		playAudio: true,
 		headFollow: true,
 		smoothMorphTarget: true,
@@ -70,7 +82,7 @@ export function Avatar(props) {
 			value: "Having A Meeting",
 			options: Object.keys(animationFiles),
 		},
-	});
+	};
 
 	let audio = useMemo(() => {
 		let audioPath = props.response.speechData.audioFilePath;
@@ -129,7 +141,7 @@ export function Avatar(props) {
 			// lipsync[i].audioOffset is in milliseconds, so divide by 1000 to get seconds
 			let visemeOffsetTime = lipsync[i].audioOffset / 1000;
 			let nextVisemeOffsetTime = lipsync[i + 1] ? lipsync[i + 1].audioOffset / 1000 : 0;
-			
+
 			if (currentAudioTime >= visemeOffsetTime && currentAudioTime < nextVisemeOffsetTime) {
 				if (!smoothMorphTarget) {
 					nodes.Wolf3D_Head.morphTargetInfluences[nodes.Wolf3D_Head.morphTargetDictionary[azureToOculusVisemes[visemeId]]] = 1;
@@ -155,7 +167,7 @@ export function Avatar(props) {
 				break;
 			}
 		}
-	});
+	}, [audio]);
 
 	const { nodes, materials } = useGLTF("/models/6505ad3b7a4b5e00b4da04e8.glb");
 	const { animations: idleAnimation } = useFBX("/animations/Sitting Idle.fbx");
@@ -186,7 +198,7 @@ export function Avatar(props) {
 			setAnimation("Sitting Idle");
 			audio.pause();
 		}
-	}, [playAudio, props.response, animationName]);
+	}, [props.response, audio, playAudio]);
 
 	useEffect(() => {
 		if (actions[animation]) {

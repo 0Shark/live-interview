@@ -16,7 +16,7 @@ const request = require("request");
 export default class Chatbot {
 	constructor(public_path) {
 		dotenv.config();
-
+		this.socket_id = null;
 		this.openai = new OpenAI({
 			apiKey: process.env.OPENAI_API_KEY,
 		});
@@ -35,7 +35,7 @@ export default class Chatbot {
 		// Create temp folder
 		if (!fs.existsSync(this.publicDir + "/temp")) {
 			fs.mkdirSync(this.publicDir + "/temp");
-		} 
+		}
 
 		// Create audio folder
 		if (!fs.existsSync(this.publicDir + "/temp/audio")) {
@@ -48,8 +48,9 @@ export default class Chatbot {
 		}
 	}
 
-	async initialize(settings) {
+	async initialize(settings, socket_id) {
 		this.settings = settings;
+		this.socket_id = socket_id;
 
 		this.speechConfig.speechSynthesisVoiceName = settings.tts_voice;
 		this.speechConfig.speechRecognitionLanguage = settings.speechLanguage;
@@ -66,9 +67,7 @@ export default class Chatbot {
 
 		this.messages.push({
 			role: "system",
-			content: `You're an interview clone taking part in a job interview: 
-			Rules: 1) Never mention you're an AI 2) Always give logical answer only based on the resume and the Identity information, never invent fake information 3) Always answer in the language you're asked to 4) Always answer in a human way, never use technical terms 5) Always answer in a way that is coherent with the previous answers 6) Stick to the job interview topic and don't go off topic
-			Identity: you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}. From now on answer in ${this.settings.language} NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions: ${resumeText}`,
+			content: `You're an interview clone taking part in a job interview: Rules: 1) Never mention you're an AI 2) Always give logical answer only based on the resume and the Identity information, never invent fake information 3) Always answer in the language you're asked to 4) Always answer in a human way, never use technical terms 5) Always answer in a way that is coherent with the previous answers but NEVER repeat yourself 6) NEVER repeat yourself. Identity: you're name is ${this.settings.my_name} ${this.settings.my_surname} and you're applying for a ${this.settings.job_title} position at ${this.settings.company_name}. The interviewer's name is ${this.settings.interviewer_name} ${this.settings.interviewer_surname}. From now on answer in ${this.settings.language} NEVER MENTION THAT YOU'RE AN AI. Here's the resume text in order to help you answer the questions: ${resumeText}`,
 		});
 
 		for (const [input_text, completion_text] of this.openaiHistory) {
@@ -116,9 +115,13 @@ export default class Chatbot {
 				messages: this.messages,
 			});
 
-			this.openaiHistory.push([userInput, completion.choices[0].message.content]);
+			this.messages.push({
+				role: "assistant",
+				content: completion.choices[0].message.content,
+			});
 
 			//console.log(`ANSWER: ${completion.choices[0].message.content}`);
+			await this.exportChat();
 
 			return completion.choices[0].message.content;
 		} catch (error) {
@@ -131,6 +134,7 @@ export default class Chatbot {
 	}
 
 	async exportChat() {
+		console.log("Exporting chat...");
 		const chat = [];
 		for (let i = 0; i < this.messages.length; i++) {
 			if (this.messages[i].role == "user" || this.messages[i].role == "assistant") {
@@ -141,11 +145,17 @@ export default class Chatbot {
 				});
 			}
 		}
-		const chat_path = path.join(this.publicDir, "temp/chats", `${Math.random().toString(36).substring(7)}.json`);
-
+		const chat_path = path.join(this.publicDir, "temp/chats", `${this.socket_id}.json`);
+		console.log(`Chat path: ${chat_path}`);
 		// Save chat to file
 		let data = JSON.stringify(chat);
-		fs.writeFileSync(chat_path, data);
+
+		// Write to file
+		console.log(`Writing to file: ${chat_path}`);
+		await fs.writeFile(chat_path, data, (err) => {
+			if (err) throw err;
+			console.log("Chat saved to file.");
+		});
 
 		return chat_path;
 	}
@@ -241,6 +251,7 @@ export default class Chatbot {
 	}
 
 	async close() {
+		console.log("Closing chatbot...");
 		this.speechRecognizer.close();
 
 		for (let i = 0; i < this.audioFilePaths.length; i++) {

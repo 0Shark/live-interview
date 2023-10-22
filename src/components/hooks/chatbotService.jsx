@@ -2,7 +2,11 @@ import { io } from "socket.io-client";
 
 class ChatbotService {
 	constructor() {
+		// Production
 		this.socket = io();
+
+		// Development
+		//this.socket = io("localhost:5000");
 	}
 
 	async init(settings) {
